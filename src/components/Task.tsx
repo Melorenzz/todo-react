@@ -25,7 +25,7 @@ function Task({ id, title, createdAt, isCompleted, onToggleCompletion, onEdit, d
                     className="min-w-[30px] w-[30px] h-[30px] rounded-sm cursor-pointer accent-[rgb(94,114,227)] hover:scale-110 transition-transform duration-200"
                 />
                 <div className='relative w-full'>
-                    <p className={`font-[500] ${isShowMore ? 'line-clamp-none' : 'line-clamp-2'} leading-5 ${isCompleted ? 'line-through text-gray-500' : 'text-black'}`}>
+                    <p className={`font-[500] break-all ${isShowMore ? 'line-clamp-none' : 'line-clamp-2'} leading-5 ${isCompleted ? 'line-through text-gray-500' : 'text-black'}`}>
                         {title}
                     </p>
                     <p className='text-[14px]'>{createdAt}</p>
