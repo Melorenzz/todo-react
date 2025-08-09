@@ -19,6 +19,11 @@ npm run dev
 npm run back
 ```
 
+Technologies: <br>
+```frontend: html, tailwind, react, typescript```
+
+```backend: node, express, mongodb, mongoose```
+
 Project structure:
 ```
 |   .env
