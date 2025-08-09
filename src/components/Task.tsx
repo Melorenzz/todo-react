@@ -2,16 +2,19 @@ import { Trash2, Pencil } from 'lucide-react';
 import { useState } from 'react';
 
 interface ITasks {
-    id: number;
+    id: string;
     title: string;
     createdAt: string;
     isCompleted: boolean;
     onToggleCompletion: (taskId: number) => void;
-    onEdit: (task: { id: number; title: string; createdAt: string; isCompleted: boolean }) => void; 
-    deleteTask: (taskId: number) => void; 
+    setIsEdit: (value: boolean) => void;
+    setIsOpenModal: (value: boolean) => void;
+    deleteTask: (taskId: number) => void;
+    setCurrentEditTask: (value: string) => void;
+
 }
 
-function Task({ id, title, createdAt, isCompleted, onToggleCompletion, onEdit, deleteTask }: ITasks) {
+function Task({ id, title, createdAt, isCompleted, onToggleCompletion, setIsEdit, setCurrentEditTask, setIsOpenModal, deleteTask }: ITasks) {
     const [isShowMore, setIsShowMore] = useState(false);
     
 
@@ -37,7 +40,7 @@ function Task({ id, title, createdAt, isCompleted, onToggleCompletion, onEdit, d
 
             <div className="flex gap-[5px]">
             <button
-  onClick={() => deleteTask(id)} // ← ВАЖНО!
+  onClick={() => deleteTask(id)}
   className="w-[30px] h-[30px] p-[5px] rounded-sm bg-[rgb(237,237,237)] flex justify-center items-center hover:bg-red-100 hover:scale-110 transition-all duration-200 group"
 >
   <Trash2 className="w-full h-full text-[rgb(88,88,88)] group-hover:text-red-600 transition-colors duration-200" />
@@ -45,7 +48,7 @@ function Task({ id, title, createdAt, isCompleted, onToggleCompletion, onEdit, d
 
                 <button
                     className="w-[30px] h-[30px] p-[5px] rounded-sm bg-[rgb(237,237,237)] flex justify-center items-center hover:bg-blue-100 hover:scale-110 transition-all duration-200 group"
-                    onClick={() => onEdit({ id, title, createdAt, isCompleted })} 
+                    onClick={(e) => {e.preventDefault(); setIsEdit(true); setIsOpenModal(true); setCurrentEditTask(id)}}
                 >
                     <Pencil className='w-full h-full text-[rgb(88,88,88)] group-hover:text-blue-600 transition-colors duration-200' />
                 </button>

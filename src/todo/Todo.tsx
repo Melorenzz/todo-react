@@ -1,80 +1,100 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import CustomSelect from "../components/CustomSelect";
 import Task from "../components/Task";
 import CreateTaskModal from "../components/CreateTaskModal";
 import {AnimatePresence} from "framer-motion";
 import {ToastContainer, toast} from 'react-toastify';
+import axios from 'axios';
 
 function Todo() {
     const [selectedFilter, setSelectedFilter] = useState('All')
     const [isOpenModal, setIsOpenModal] = useState(false)
     const [newUserTask, setNewUserTask] = useState('')
-    const [tasks, setTasks] = useState(() => {
-        const saved = localStorage.getItem("tasks");
-        return saved ? JSON.parse(saved) : [];
-    });
-    const [isCreateTask, setIsCreateTask] = useState(true);
+    const [tasks, setTasks] = useState<any[]>([]);
     const [editableTask, setEditableTask] = useState<any | null>(null);
+    const [currentEditTask, setCurrentEditTask] = useState('');
+    const [isEdit, setIsEdit] = useState(false);
 
-    function editTask(task: any) {
-        setEditableTask(task);
-        setIsCreateTask(false);
-        setIsOpenModal(true);
 
-    }
-
-    function handleNewUserTask(taskTitle: string) {
-        if (!isCreateTask && editableTask) {
-            const updatedTasks = tasks.map(task =>
-                task.id === editableTask.id
-                    ? {...task, title: taskTitle}
-                    : task
-            );
-            setTasks(updatedTasks);
-            localStorage.setItem("tasks", JSON.stringify(updatedTasks));
-            setEditableTask(null);
-            setIsCreateTask(true);
-        } else {
-            addNewTask(taskTitle);
+    async function toggleTaskCompletion(taskId: string) {
+        try {
+            await axios.put(`http://localhost:3005/tasks/${taskId}`, {
+                completed: !tasks.find(task => task._id === taskId)?.completed,
+            });
+            fetchTasks();
+        } catch (err) {
+            console.log(err);
         }
-        setNewUserTask('');
-    }
-
-    function deleteTask(taskId: number) {
-        const updatedTasks = tasks.filter(task => task.id !== taskId);
-        setTasks(updatedTasks);
-        localStorage.setItem("tasks", JSON.stringify(updatedTasks));
-        toast.success('Successfully deleted!')
-    }
-
-    function addNewTask(taskTitle: string) {
-        const newTask = {
-            id: Date.now(),
-            title: taskTitle,
-            createdAt: new Date().toLocaleString(),
-            isCompleted: false,
-        };
-        const updatedTasks = [newTask, ...tasks];
-        setTasks(updatedTasks);
-        localStorage.setItem("tasks", JSON.stringify(updatedTasks));
     }
 
 
-    function toggleTaskCompletion(taskId: number) {
-        const updatedTasks = tasks.map(task =>
-            task.id === taskId
-                ? {...task, isCompleted: !task.isCompleted}
-                : task
-        );
-        setTasks(updatedTasks);
-        localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+    async function deleteTask(taskId: number) {
+        console.log('START DELETE TASK', taskId);
+        try {
+            await axios.delete(`http://localhost:3005/tasks/${taskId}`)
+            fetchTasks()
+            toast.success('Task deleted!')
+        }
+        catch(err) {
+            console.log(err)
+        }
+        finally {
+            console.log('ПРОВЕРКА')
+        }
     }
+    async function editTask(taskId: number){
+
+        try{
+            await axios.put(`http://localhost:3005/tasks/${taskId}`, {
+                title: newUserTask,
+            })
+            fetchTasks()
+            toast.success('Task edited!')
+        }
+        catch(err){
+            console.log(err)
+        }
+        finally {
+            setIsOpenModal(false)
+        }
+    }
+
+    // async function toggleTaskCompletion(taskId: number) {
+    //     try{
+    //         await axios.put(`http://localhost:3005/tasks/${taskId}`, {
+    //             completed: ,
+    //         })
+    //         fetchTasks()
+    //     }
+    //     catch(err){
+    //         console.log(err)
+    //     }
+    //
+    // }
+
+    async function fetchTasks() {
+        try{
+            const data = await axios.get('http://localhost:3005/tasks')
+            setTasks(data.data)
+            console.log(data.data)
+        }
+        catch(err){
+            console.log(err)
+        }
+    }
+
+
+
+    useEffect(() => {
+        fetchTasks()
+    }, [])
+
     const filteredTasks = (() => {
         if (selectedFilter === 'Active') {
-            return tasks.filter(task => !task.isCompleted);
+            return tasks.filter(task => !task.completed);
         }
         if (selectedFilter === 'Completed') {
-            return tasks.filter(task => task.isCompleted);
+            return tasks.filter(task => task.completed);
         }
         return tasks;
     })();
@@ -93,9 +113,12 @@ function Todo() {
             <AnimatePresence>
                 {isOpenModal && (
                     <CreateTaskModal
+                        editTask={editTask}
+                        fetchTasks={fetchTasks}
+                        setNewUserTask={setNewUserTask}
                         setIsOpenModal={setIsOpenModal}
-                        setNewUserTask={handleNewUserTask}
-                        isCreateTask={isCreateTask}
+                        currentEditTask={currentEditTask}
+                        isCreateTask={!isEdit}
                         defaultValue={editableTask?.title || ''}
                     />
                 )}
@@ -106,7 +129,7 @@ function Todo() {
                 <div className="flex justify-between items-center">
                     <button
                         className="px-[20px] text-[18px] py-[5px] text-white rounded-sm bg-[rgb(94,114,227)] hover:bg-[rgb(84,104,217)] transition-colors duration-200"
-                        onClick={() => setIsOpenModal(true)}
+                        onClick={() => {setIsOpenModal(true); setIsEdit(false)}}
                     >
                         Add Task
                     </button>
@@ -117,14 +140,18 @@ function Todo() {
                         filteredTasks.length > 0 ? (
                             filteredTasks.map(task => (
                                 <Task
-                                    key={task.id}
-                                    id={task.id}
+                                    key={task._id}
+                                    id={task._id}
                                     title={task.title}
                                     createdAt={task.createdAt}
-                                    isCompleted={task.isCompleted}
+                                    isCompleted={task.completed}
                                     deleteTask={deleteTask}
+                                    editTask={editTask}
+                                    setIsOpenModal={setIsOpenModal}
+                                    setCurrentEditTask={setCurrentEditTask}
                                     onToggleCompletion={toggleTaskCompletion}
-                                    onEdit={editTask}
+                                    // onEdit={editTask}
+                                    setIsEdit={setIsEdit}
                                 />
                             ))
                         ) : (
